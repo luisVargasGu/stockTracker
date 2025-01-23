@@ -1,4 +1,4 @@
-module github.com/luisVargasGu/stockTracker/common/middleware
+module github.com/luisVargasGu/stockTracker/common
 
 go 1.23.4
 
