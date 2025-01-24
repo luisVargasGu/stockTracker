@@ -2,37 +2,34 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name         string             `json:"name"`
-	Username     string             `json:"email"`
-	Role         string             `json:"role"` // e.g., "admin", "user"
-	PasswordHash string             `json:"-"`
-	Avatar       []byte             `json:"avatar,omitempty"`
-	LastLogin    time.Time          `json:"lastLogin"`
-	UpdatedAt    time.Time          `json:"updatedAt"`
-	CreatedAt    time.Time          `json:"createdAt"`
-	DeletedAt    *time.Time         `json:"deletedAt,omitempty"`
+	ID           int        `json:"id"`
+	Name         string     `json:"name"`
+	Username     string     `json:"email"`
+	Role         string     `json:"role"` // e.g., "admin", "user"
+	PasswordHash string     `json:"-"`
+	Avatar       []byte     `json:"avatar,omitempty"`
+	LastLogin    time.Time  `json:"lastLogin"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	DeletedAt    *time.Time `json:"deletedAt,omitempty"`
 }
 
 type UserInfo struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Username  string    `json:"username"`
-	AvatarURL string    `json:"avatarUrl,omitempty"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Username  string `json:"username"`
+	AvatarURL string `json:"avatarUrl,omitempty"`
 }
 
 type UserStore interface {
 	GetUserByEmail(email string) (*User, error)
-	GetUserByID(id primitive.ObjectID) (*User, error)
+	GetUserByID(id int) (*User, error)
 	GetUsers(offset, limit int) ([]*User, error)
 	CreateUser(user *User) (*User, error)
-	UpdateUser(id uuid.UUID, updates map[string]interface{}) (*User, error)
+	UpdateUser(id int, updates map[string]interface{}) (*User, error)
 	DeleteUser(id int) (int, error)
 }
 
