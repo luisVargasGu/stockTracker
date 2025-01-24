@@ -1,20 +1,21 @@
 package models
 
 import (
+	"context"
 	"time"
 )
 
 type User struct {
-	ID           int        `json:"id"`
-	Name         string     `json:"name"`
-	Username     string     `json:"email"`
-	Role         string     `json:"role"` // e.g., "admin", "user"
-	PasswordHash string     `json:"-"`
-	Avatar       []byte     `json:"avatar,omitempty"`
-	LastLogin    time.Time  `json:"lastLogin"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	DeletedAt    *time.Time `json:"deletedAt,omitempty"`
+	ID           int        `json:"id" db:"id"`
+	Name         string     `json:"name" db:"name"`
+	Username     string     `json:"email" db:"username"`
+	Role         string     `json:"role" db:"role"` // e.g., "admin", "user"
+	PasswordHash string     `json:"-" db:"password_hash"`
+	Avatar       []byte     `json:"avatar,omitempty" db:"avatar"`
+	LastLogin    time.Time  `json:"lastLogin" db:"last_login"`
+	UpdatedAt    time.Time  `json:"updatedAt" db:"updated_at"`
+	CreatedAt    time.Time  `json:"createdAt" db:"created_at"`
+	DeletedAt    *time.Time `json:"deletedAt,omitempty" db:"deleted_at"`
 }
 
 type UserInfo struct {
@@ -25,12 +26,12 @@ type UserInfo struct {
 }
 
 type UserStore interface {
-	GetUserByEmail(email string) (*User, error)
-	GetUserByID(id int) (*User, error)
-	GetUsers(offset, limit int) ([]*User, error)
-	CreateUser(user *User) (*User, error)
-	UpdateUser(id int, updates map[string]interface{}) (*User, error)
-	DeleteUser(id int) (int, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	GetUserByID(ctx context.Context, id int) (*User, error)
+	GetUsers(ctx context.Context, offset, limit int) ([]*User, error)
+	CreateUser(ctx context.Context, user *User) (*User, error)
+	UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*User, error)
+	DeleteUser(ctx context.Context, id int) (bool, error)
 }
 
 type LoginUserPayload struct {
