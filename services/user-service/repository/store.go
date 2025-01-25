@@ -18,13 +18,13 @@ var (
 	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
-type Store struct {
+type UserStore struct {
 	db  *sqlx.DB
 	log *zap.Logger
 }
 
-func NewStore(db *sqlx.DB, logger *zap.Logger) *Store {
-	return &Store{db: db, log: logger}
+func NewUserStore(db *sqlx.DB, logger *zap.Logger) *UserStore {
+	return &UserStore{db: db, log: logger}
 }
 
 const (
@@ -39,33 +39,33 @@ const (
 )
 
 // CreateUser inserts a new user into the database.
-func (s *Store) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *UserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	// Check if user already exists
 	var count int
-	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM Users WHERE Username = $1", user.Username)
+	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM Users WHERE Email = $1", user.Email)
 	if err != nil {
 		s.log.Error("Error querying database for existing user", zap.Error(err))
 		return nil, err
 	}
 
 	if count > 0 {
-		s.log.Warn("User already exists", zap.String("username", user.Username))
+		s.log.Warn("User already exists", zap.String("username", user.Email))
 		return nil, ErrUserAlreadyExists
 	}
 
 	// Insert new user
 	err = s.db.QueryRowxContext(ctx, createUserQuery, user).Scan(&user.ID)
 	if err != nil {
-		s.log.Error("Error creating user", zap.String("username", user.Username), zap.Error(err))
+		s.log.Error("Error creating user", zap.String("username", user.Email), zap.Error(err))
 		return nil, err
 	}
 
-	s.log.Info("User created successfully", zap.Int("userID", user.ID), zap.String("username", user.Username))
+	s.log.Info("User created successfully", zap.Int("userID", user.ID), zap.String("username", user.Email))
 	return user, nil
 }
 
 // GetUserByEmail retrieves a user by their email.
-func (s *Store) GetUserByEmail(ctx context.Context, username string) (*models.User, error) {
+func (s *UserStore) GetUserByEmail(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
 
 	err := s.db.GetContext(ctx, &user, getUserByEmailQuery, username)
@@ -83,7 +83,7 @@ func (s *Store) GetUserByEmail(ctx context.Context, username string) (*models.Us
 }
 
 // GetUserByID retrieves a user by their ID.
-func (s *Store) GetUserByID(ctx context.Context, userID int) (*models.User, error) {
+func (s *UserStore) GetUserByID(ctx context.Context, userID int) (*models.User, error) {
 	var user models.User
 
 	err := s.db.GetContext(ctx, &user, getUserByIDQuery, userID)
@@ -101,7 +101,7 @@ func (s *Store) GetUserByID(ctx context.Context, userID int) (*models.User, erro
 }
 
 // GetUsers retrieves multiple users
-func (s *Store) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, error) {
+func (s *UserStore) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, error) {
 	const query = getUserByBase + `
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -118,7 +118,7 @@ func (s *Store) GetUsers(ctx context.Context, offset, limit int) ([]*models.User
 	return users, nil
 }
 
-func (s *Store) UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*models.User, error) {
+func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*models.User, error) {
 	logger := s.log.With(zap.Int("ID", id))
 
 	// Validate input
@@ -175,7 +175,7 @@ func (s *Store) UpdateUser(ctx context.Context, id int, updates map[string]inter
 	return &updatedUser, nil
 }
 
-func (s *Store) DeleteUser(ctx context.Context, id int) (bool, error) {
+func (s *UserStore) DeleteUser(ctx context.Context, id int) (bool, error) {
 	logger := s.log.With(zap.Int("ID", id))
 
 	query := "DELETE FROM Users WHERE id = $1"
