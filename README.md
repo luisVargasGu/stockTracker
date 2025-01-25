@@ -94,6 +94,7 @@ The Stock Portfolio Tracker is an application designed to help users manage and 
 ├── /services
 │   ├── /user-service
 │   │   ├── /controllers # Handlers for routes
+│   │   ├── /db          # Databases
 │   │   ├── /models      # Data models
 │   │   ├── /repository  # Database layer
 │   │   ├── /services    # Business logic
