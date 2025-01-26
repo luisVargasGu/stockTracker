@@ -8,7 +8,7 @@ type UserRepository interface {
 	GetUsers(ctx context.Context, offset, limit int) ([]*User, int, error)
 	CreateUser(ctx context.Context, user *User) (*User, error)
 	UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*User, error)
-	DeleteUser(ctx context.Context, id int) (bool, error)
+	DeleteUser(ctx context.Context, id int) error
 }
 
 type UserService interface {
