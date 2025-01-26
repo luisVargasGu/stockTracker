@@ -101,7 +101,7 @@ func (s *UserStore) GetUserByID(ctx context.Context, userID int) (*models.User, 
 }
 
 // GetUsers retrieves multiple users
-func (s *UserStore) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, error) {
+func (s *UserStore) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, int, error) {
 	const query = getUserByBase + `
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -111,11 +111,11 @@ func (s *UserStore) GetUsers(ctx context.Context, offset, limit int) ([]*models.
 	err := s.db.SelectContext(ctx, &users, query)
 	if err != nil {
 		s.log.Error("Error querying users", zap.Int("offset", offset), zap.Int("limit", limit))
-		return nil, err
+		return nil, 0, err
 	}
 
 	s.log.Info("Users retrieved successfully", zap.Int("count", len(users)), zap.Int("offset", offset), zap.Int("limit", limit))
-	return users, nil
+	return users, len(users), nil
 }
 
 func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*models.User, error) {
@@ -129,9 +129,10 @@ func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]i
 
 	// Strict field validation
 	validFields := map[string]bool{
-		"username": true,
-		"avatar":   true,
-		"name":     true,
+		"username":   true,
+		"updated_at": true,
+		"avatar":     true,
+		"name":       true,
 	}
 
 	// Prepare query builder
