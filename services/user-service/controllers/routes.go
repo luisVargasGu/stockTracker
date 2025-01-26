@@ -26,8 +26,11 @@ func NewUserHandler(service models.UserService, tokenService *middleware.TokenSe
 }
 
 func (h *UserHandler) RegisterRoutes(r *gin.Engine) {
-	r.POST("/users/register", h.RegisterUser)
-	r.POST("/users/login", h.LoginUser)
+	r.OPTIONS("/users/register", middleware.CorsMiddleware())
+	r.POST("/users/register", middleware.CorsMiddleware(), h.RegisterUser)
+
+	r.OPTIONS("/users/login", middleware.CorsMiddleware())
+	r.POST("/users/login", middleware.CorsMiddleware(), h.LoginUser)
 
 	r.OPTIONS("/users/:id", middleware.CorsMiddleware())
 	r.GET("/users/:id",
