@@ -56,7 +56,7 @@ func (ts *TokenService) ValidateToken(tokenString string) (*AuthClaims, error) {
 	return nil, errors.New("invalid token")
 }
 
-func AuthMiddleware(tokenService *TokenService) gin.HandlerFunc {
+func AuthMiddleware(tokenService TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

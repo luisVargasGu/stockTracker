@@ -35,11 +35,11 @@ type UserService struct {
 
 func NewUserService(repository models.UserRepository,
 	tokenService middleware.TokenService,
-	log *zap.Logger) *UserService {
-	return &UserService{repo: repository, tokenService: tokenService, log: log}
+	log *zap.Logger) UserService {
+	return UserService{repo: repository, tokenService: tokenService, log: log}
 }
 
-func (s *UserService) LoginUser(ctx *gin.Context, payload models.LoginUserPayload) (*models.LoginResponse, error) {
+func (s UserService) LoginUser(ctx context.Context, payload models.LoginUserPayload) (*models.LoginResponse, error) {
 	// Prepare default response
 	response := &models.LoginResponse{
 		Success: false,
@@ -83,7 +83,7 @@ func (s *UserService) LoginUser(ctx *gin.Context, payload models.LoginUserPayloa
 
 	// Update last login (non-blocking)
 	go func() {
-		if _, err := s.repo.UpdateUser(context.Background(),
+		if _, err := s.repo.UpdateUser(ctx,
 			user.ID, map[string]interface{}{"updated_at": time.Now()}); err != nil {
 			s.log.Error("Failed to update last login", zap.Error(err))
 		}
@@ -105,7 +105,7 @@ func (s *UserService) LoginUser(ctx *gin.Context, payload models.LoginUserPayloa
 	return response, nil
 }
 
-func (s *UserService) RegisterUser(ctx *gin.Context, payload models.RegisterUserPayload) (*models.User, error) {
+func (s UserService) RegisterUser(ctx context.Context, payload models.RegisterUserPayload) (*models.User, error) {
 	// Check if user already exists
 	existingUser, err := s.repo.GetUserByEmail(ctx, payload.Email)
 	if err != nil && err != ErrUserNotFound {
@@ -133,7 +133,7 @@ func (s *UserService) RegisterUser(ctx *gin.Context, payload models.RegisterUser
 	return s.repo.CreateUser(ctx, newUser)
 }
 
-func (s *UserService) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, int, error) {
+func (s UserService) GetUsers(ctx context.Context, offset, limit int) ([]*models.User, int, error) {
 	// Fetch paginated users
 	users, totalUsers, err := s.repo.GetUsers(ctx, offset, limit)
 	if err != nil {
@@ -143,7 +143,7 @@ func (s *UserService) GetUsers(ctx context.Context, offset, limit int) ([]*model
 	return users, totalUsers, nil
 }
 
-func (s *UserService) GetUserByID(ctx *gin.Context, id int) (*models.User, error) {
+func (s UserService) GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	currentUser, err := s.checkPermissions(ctx, id)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (s *UserService) GetUserByID(ctx *gin.Context, id int) (*models.User, error
 	return currentUser, nil
 }
 
-func (s *UserService) UpdateUser(ctx *gin.Context, id int, updates map[string]interface{}) (*models.User, error) {
+func (s UserService) UpdateUser(ctx context.Context, id int, updates map[string]interface{}) (*models.User, error) {
 	_, err := s.checkPermissions(ctx, id)
 	if err != nil {
 		return nil, err
@@ -166,11 +166,11 @@ func (s *UserService) UpdateUser(ctx *gin.Context, id int, updates map[string]in
 	return updatedUser, nil
 }
 
-func (s *UserService) hasAccessToUser(user *models.User, id int) bool {
+func (s UserService) hasAccessToUser(user *models.User, id int) bool {
 	return user.ID == id || user.Role == AdminRole
 }
 
-func (s *UserService) DeleteUser(ctx *gin.Context, id int) error {
+func (s UserService) DeleteUser(ctx context.Context, id int) error {
 	currentUser, err := s.extractUserFromContext(ctx)
 	if err != nil {
 		return ErrUnauthorized
@@ -189,7 +189,7 @@ func (s *UserService) DeleteUser(ctx *gin.Context, id int) error {
 	return nil
 }
 
-func (s *UserService) checkPermissions(ctx *gin.Context, id int) (*models.User, error) {
+func (s UserService) checkPermissions(ctx context.Context, id int) (*models.User, error) {
 	// Authenticate/authorize user from context
 	currentUser, err := s.extractUserFromContext(ctx)
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *UserService) checkPermissions(ctx *gin.Context, id int) (*models.User, 
 	return currentUser, nil
 }
 
-func (s *UserService) extractUserFromContext(ctx *gin.Context) (*models.User, error) {
+func (s UserService) extractUserFromContext(ctx context.Context) (*models.User, error) {
 	// Extract user ID from Gin context
 	userID, ok := ctx.Value("user_id").(string)
 	if !ok {

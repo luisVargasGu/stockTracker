@@ -17,15 +17,16 @@ import (
 
 type UserHandler struct {
 	service models.UserService
-	ts      *middleware.TokenService
+	ts      middleware.TokenService
 	log     *zap.Logger
 }
 
-func NewUserHandler(service models.UserService, tokenService *middleware.TokenService, log *zap.Logger) *UserHandler {
+// TODO: add time limit context to all service calls
+func NewUserHandler(service models.UserService, tokenService middleware.TokenService, log *zap.Logger) *UserHandler {
 	return &UserHandler{service: service, ts: tokenService, log: log}
 }
 
-func (h *UserHandler) RegisterRoutes(r *gin.Engine) {
+func (h *UserHandler) RegisterRoutes(r *gin.RouterGroup) {
 	r.OPTIONS("/users/register", middleware.CorsMiddleware())
 	r.POST("/users/register", middleware.CorsMiddleware(), h.RegisterUser)
 

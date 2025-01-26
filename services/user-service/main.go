@@ -1,12 +1,12 @@
-package userservice
+package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/luisVargasGu/stockTracker/common/middleware"
+	"github.com/luisVargasGu/stockTracker/user-service/api"
+	"github.com/luisVargasGu/stockTracker/user-service/db"
 	"go.uber.org/zap"
 )
 
@@ -19,15 +19,7 @@ func main() {
 	}
 	defer logger.Sync()
 
-	r := gin.New()
-
-	r.Use(middleware.LoggingMiddleware(logger))
-
-	// Routes after this requre auth
-	r.Use(middleware.AuthMiddleware(tokenService))
-
-	// TODO: When registering routes with handlers pass the logger
-	fmt.Printf(
-		"started",
-	)
+	db := db.DbConnect(logger)
+	server := api.NewAPIServer(":8080", db)
+	server.Run(logger, *tokenService)
 }

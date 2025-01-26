@@ -1,6 +1,6 @@
 go 1.23.4
 
 use (
-    ./common
-    ./services/user-service
+	./common
+	./services/user-service
 )
