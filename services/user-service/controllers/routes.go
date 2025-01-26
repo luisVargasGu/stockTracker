@@ -10,8 +10,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/luisVargasGu/stockTracker/common/middleware"
 	"github.com/luisVargasGu/stockTracker/common/utils"
-	"github.com/luisVargasGu/stockTracker/user-service/models"
-	"github.com/luisVargasGu/stockTracker/user-service/services"
+	"github.com/luisVargasGu/stockTracker/services/user-service/models"
+	"github.com/luisVargasGu/stockTracker/services/user-service/services"
 	"go.uber.org/zap"
 )
 

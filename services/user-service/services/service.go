@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/luisVargasGu/stockTracker/common/middleware"
-	"github.com/luisVargasGu/stockTracker/user-service/models"
+	"github.com/luisVargasGu/stockTracker/services/user-service/models"
 	"go.uber.org/zap"
 )
 

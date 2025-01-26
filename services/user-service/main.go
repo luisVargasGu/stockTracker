@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/luisVargasGu/stockTracker/common/middleware"
-	"github.com/luisVargasGu/stockTracker/user-service/api"
-	"github.com/luisVargasGu/stockTracker/user-service/db"
+	"github.com/luisVargasGu/stockTracker/services/user-service/api"
+	"github.com/luisVargasGu/stockTracker/services/user-service/db"
 	"go.uber.org/zap"
 )
 

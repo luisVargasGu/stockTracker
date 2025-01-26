@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/luisVargasGu/stockTracker/common/middleware"
-	"github.com/luisVargasGu/stockTracker/user-service/controllers"
-	"github.com/luisVargasGu/stockTracker/user-service/repository"
-	"github.com/luisVargasGu/stockTracker/user-service/services"
+	"github.com/luisVargasGu/stockTracker/services/user-service/controllers"
+	"github.com/luisVargasGu/stockTracker/services/user-service/repository"
+	"github.com/luisVargasGu/stockTracker/services/user-service/services"
 	"go.uber.org/zap"
 )
 

@@ -1,4 +1,4 @@
-module github.com/luisVargasGu/stockTracker/user-service
+module github.com/luisVargasGu/stockTracker/services/user-service
 
 go 1.23.4
 
