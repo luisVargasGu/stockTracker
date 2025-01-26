@@ -66,6 +66,13 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		h.log.Error("Validation failed", zap.Error(err))
+		c.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("validation failed: %w", err)))
+		return
+	}
+
 	// Call the service layer to handle registration logic
 	user, err := h.service.RegisterUser(c, payload)
 	if err != nil {
@@ -83,6 +90,13 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		h.log.Error("Invalid request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid request body: %w", err)))
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		h.log.Error("Validation failed", zap.Error(err))
+		c.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("validation failed: %w", err)))
 		return
 	}
 
