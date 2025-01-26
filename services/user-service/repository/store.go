@@ -5,11 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/luisVargasGu/stockTracker/user-service/models"
+	"github.com/luisVargasGu/stockTracker/user-service/services"
 	"go.uber.org/zap"
 )
 
@@ -129,6 +132,7 @@ func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]i
 
 	// Strict field validation
 	validFields := map[string]bool{
+		"email":      true,
 		"username":   true,
 		"updated_at": true,
 		"avatar":     true,
@@ -167,36 +171,47 @@ func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]i
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.Warn("No user found for update", zap.Int("ID", id))
-			return nil, fmt.Errorf("user with ID %d not found", id)
+			return nil, services.ErrUserNotFound
 		}
-		logger.Error("Failed to update user", zap.Error(err))
+
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code {
+			case "23505": // unique_violation
+				if strings.Contains(pqErr.Detail, "email") {
+					logger.Warn(`Duplicate email,
+						user with that email already exists`,
+						zap.String("email", updates["email"].(string)))
+					return nil, services.ErrDuplicateEmail
+				}
+			}
+		}
 		return nil, err
 	}
 
 	return &updatedUser, nil
 }
 
-func (s *UserStore) DeleteUser(ctx context.Context, id int) (bool, error) {
+func (s *UserStore) DeleteUser(ctx context.Context, id int) error {
 	logger := s.log.With(zap.Int("ID", id))
 
 	query := "DELETE FROM Users WHERE id = $1"
 	result, err := s.db.ExecContext(ctx, query, id)
 	if err != nil {
 		logger.Error("Failed to delete user", zap.Error(err))
-		return false, fmt.Errorf("failed to delete user with id %d: %w", id, err)
+		return fmt.Errorf("failed to delete user with id %d: %w", id, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		logger.Error("Failed to get rows affected", zap.Error(err))
-		return false, fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
 	if rowsAffected == 0 {
 		logger.Warn("No user found to delete")
-		return false, nil
+		return services.ErrUserNotFound
 	}
 
 	logger.Info("User successfully deleted")
-	return true, nil
+	return nil
 }
