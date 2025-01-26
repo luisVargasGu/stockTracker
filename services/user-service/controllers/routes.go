@@ -38,14 +38,10 @@ func (h *UserHandler) RegisterRoutes(r *gin.RouterGroup) {
 		middleware.CorsMiddleware(),
 		middleware.AuthMiddleware(h.ts),
 		h.GetUserByID)
-
-	r.OPTIONS("/users/:id", middleware.CorsMiddleware())
 	r.PUT("/users/:id",
 		middleware.CorsMiddleware(),
 		middleware.AuthMiddleware(h.ts),
 		h.UpdateUser)
-
-	r.OPTIONS("/users/:id", middleware.CorsMiddleware())
 	r.DELETE("/users/:id",
 		middleware.CorsMiddleware(),
 		middleware.AuthMiddleware(h.ts),
