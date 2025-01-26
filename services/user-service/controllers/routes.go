@@ -180,6 +180,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		switch {
 		case errors.Is(err, services.ErrUserNotFound):
 			c.JSON(http.StatusNotFound, errorResponse(err))
+		case errors.Is(err, services.ErrUnauthorized):
+			c.JSON(http.StatusUnauthorized, errorResponse(err))
 		case errors.Is(err, services.ErrDuplicateEmail):
 			c.JSON(http.StatusConflict, errorResponse(err))
 		default:
