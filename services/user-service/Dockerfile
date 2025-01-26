@@ -5,7 +5,7 @@ FROM golang:1.23.4-alpine AS build
 WORKDIR /app
 
 # Copy the Go modules and source code into the container
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod tidy
 COPY . .
 
