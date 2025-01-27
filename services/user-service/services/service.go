@@ -107,10 +107,15 @@ func (s UserService) LoginUser(ctx context.Context, payload models.LoginUserPayl
 func (s UserService) RegisterUser(ctx context.Context, payload models.RegisterUserPayload) (*models.User, error) {
 	// Check if user already exists
 	existingUser, err := s.repo.GetUserByEmail(ctx, payload.Email)
-	if err != nil && err != ErrUserNotFound {
-		return nil, err
-	}
-	if existingUser != nil {
+	if err != nil {
+		// If the error is ErrUserNotFound, proceed to create a new user
+		if !errors.Is(err, ErrUserNotFound) {
+			// For any other error, return it
+			return nil, err
+		}
+		// If the error is ErrUserNotFound, proceed to create a new user
+	} else if existingUser != nil {
+		// If a user already exists, return ErrUserAlreadyExists
 		return nil, ErrUserAlreadyExists
 	}
 
