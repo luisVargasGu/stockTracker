@@ -10,7 +10,7 @@ type LoginUserPayload struct {
 type RegisterUserPayload struct {
 	Email    string `json:"email" validate:"required,email"`
 	Name     string `json:"name,omitempty"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required,min=8"`
 	Avatar   string `json:"avatar,omitempty"` // URL or base64 encoded
 }
 
