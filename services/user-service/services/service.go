@@ -130,6 +130,10 @@ func (s UserService) RegisterUser(ctx context.Context, payload models.RegisterUs
 		Email:        payload.Email,
 		Name:         payload.Name,
 		PasswordHash: hashedPassword,
+		Role:         "admin",
+		CreatedAt:    time.Now(),
+		LastLogin:    time.Now(),
+		UpdatedAt:    time.Now(),
 		Avatar:       []byte(payload.Avatar),
 	}
 

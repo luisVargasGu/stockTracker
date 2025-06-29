@@ -15,11 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserAlreadyExists = errors.New("user already exists")
-)
-
 type UserStore struct {
 	db  *sqlx.DB
 	log *zap.Logger
@@ -31,12 +26,12 @@ func NewUserStore(db *sqlx.DB, logger *zap.Logger) *UserStore {
 
 const (
 	createUserQuery = `INSERT INTO Users 
-		(name, username, role, password_hash, avatar, last_login, updated_at, created_at) 
-		VALUES (:name, :username, :role, :password_hash, :avatar, :last_login, :updated_at, :created_at) 
+		(name, email, role, password_hash, avatar, last_login, updated_at, created_at) 
+		VALUES (:name, :email, :role, :password_hash, :avatar, :last_login, :updated_at, :created_at) 
 		RETURNING ID`
-	allUserFields       = "id, name, username, role, avatar, last_login, updated_at, created_at, deleted_at"
+	allUserFields       = "id, name, email, role, avatar, last_login, updated_at, created_at, deleted_at"
 	getUserByBase       = "SELECT " + allUserFields + " FROM Users "
-	getUserByEmailQuery = getUserByBase + "WHERE username = $1"
+	getUserByEmailQuery = getUserByBase + "WHERE email = $1"
 	getUserByIDQuery    = getUserByBase + "WHERE id = $1"
 )
 
@@ -44,43 +39,53 @@ const (
 func (s *UserStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	// Check if user already exists
 	var count int
-	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM Users WHERE Email = $1", user.Email)
+	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM Users WHERE email = $1", user.Email)
 	if err != nil {
 		s.log.Error("Error querying database for existing user", zap.Error(err))
 		return nil, err
 	}
 
 	if count > 0 {
-		s.log.Warn("User already exists", zap.String("username", user.Email))
-		return nil, ErrUserAlreadyExists
+		s.log.Warn("User already exists", zap.String("email", user.Email))
+		return nil, services.ErrUserAlreadyExists
 	}
 
 	// Insert new user
-	err = s.db.QueryRowxContext(ctx, createUserQuery, user).Scan(&user.ID)
+	rows, err := s.db.NamedQueryContext(ctx, createUserQuery, user)
 	if err != nil {
-		s.log.Error("Error creating user", zap.String("username", user.Email), zap.Error(err))
+		s.log.Error("Error creating user", zap.String("email", user.Email), zap.Error(err))
 		return nil, err
 	}
+	defer rows.Close()
 
-	s.log.Info("User created successfully", zap.Int("userID", user.ID), zap.String("username", user.Email))
+	// Scan the returned ID into the user struct
+	if rows.Next() {
+		err = rows.Scan(&user.ID)
+		if err != nil {
+			s.log.Error("Error scanning user ID", zap.Error(err))
+			return nil, err
+		}
+	}
+
+	s.log.Info("User created successfully", zap.Int("userID", user.ID), zap.String("email", user.Email))
 	return user, nil
 }
 
 // GetUserByEmail retrieves a user by their email.
-func (s *UserStore) GetUserByEmail(ctx context.Context, username string) (*models.User, error) {
+func (s *UserStore) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 
-	err := s.db.GetContext(ctx, &user, getUserByEmailQuery, username)
+	err := s.db.GetContext(ctx, &user, getUserByEmailQuery, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			s.log.Warn("User not found", zap.String("username", username))
-			return nil, ErrUserNotFound
+			s.log.Warn("User not found", zap.String("email", email))
+			return nil, services.ErrUserNotFound
 		}
-		s.log.Error("Error querying user by ID", zap.String("username", username), zap.Error(err))
+		s.log.Error("Error querying user by ID", zap.String("email", email), zap.Error(err))
 		return nil, err
 	}
 
-	s.log.Info("User retrieved successfully", zap.String("username", username))
+	s.log.Info("User retrieved successfully", zap.String("email", email))
 	return &user, nil
 }
 
@@ -92,7 +97,7 @@ func (s *UserStore) GetUserByID(ctx context.Context, userID int) (*models.User, 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.log.Warn("User not found", zap.Int("userID", userID))
-			return nil, ErrUserNotFound
+			return nil, services.ErrUserNotFound
 		}
 		s.log.Error("Error querying user by ID", zap.Int("userID", userID), zap.Error(err))
 		return nil, err
@@ -110,7 +115,7 @@ func (s *UserStore) GetUsers(ctx context.Context, offset, limit int) ([]*models.
 	`
 
 	var users []*models.User
-	err := s.db.SelectContext(ctx, &users, query)
+	err := s.db.SelectContext(ctx, &users, query, limit, offset)
 	if err != nil {
 		s.log.Error("Error querying users", zap.Int("offset", offset), zap.Int("limit", limit))
 		return nil, 0, err
@@ -132,7 +137,6 @@ func (s *UserStore) UpdateUser(ctx context.Context, id int, updates map[string]i
 	// Strict field validation
 	validFields := map[string]bool{
 		"email":      true,
-		"username":   true,
 		"updated_at": true,
 		"avatar":     true,
 		"name":       true,
