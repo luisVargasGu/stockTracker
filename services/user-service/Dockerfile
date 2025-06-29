@@ -2,12 +2,13 @@
 FROM golang:1.23.4-alpine AS build
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /workspace
+COPY . .
 
 # Copy the Go modules and source code into the container
-COPY go.mod go.sum ./
-RUN go mod tidy
-COPY . .
+WORKDIR /workspace/services/user-service
+RUN go build -o /usr/local/bin/user-service .
+
 
 # Build the Go application
 RUN go build -o stockTracker .
@@ -15,15 +16,14 @@ RUN go build -o stockTracker .
 # Use a smaller image for the final container
 FROM alpine:latest  
 
-# Set the working directory
-WORKDIR /root/
+COPY --from=build /usr/local/bin/user-service /root/user-service
 
-# Copy the Go binary from the build image
-COPY --from=build /app/stockTracker .
+# Set the working directory
+WORKDIR /root
 
 # Expose the port on which your microservice will run
 EXPOSE 8080
 
 # Command to run the application
-CMD ["./stockTracker"]
+CMD ["./user-service"]
 

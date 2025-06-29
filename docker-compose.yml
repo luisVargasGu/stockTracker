@@ -1,0 +1,90 @@
+version: "3.9"
+
+###############################################################################
+#  Core network and shared resources
+###############################################################################
+networks:
+  stocktracker:
+    driver: bridge
+
+volumes:
+  db_data:      # persistent Postgres data
+###############################################################################
+
+
+###############################################################################
+#  Database (shared for now – you can split per-service later)
+###############################################################################
+services:
+  db:
+    image: postgres:15               # pin a fixed major for repeatability
+    environment:
+      POSTGRES_USER:     admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB:       users        # initial DB; you can create others at runtime
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # user-service SQL seed script lives alongside its Dockerfile
+      - ./services/user-service/db_init:/docker-entrypoint-initdb.d:ro
+    networks: [stocktracker]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d users"]
+      interval: 5s
+      retries: 5
+
+
+###############################################################################
+#  User-Service  (currently the only one you’re testing)
+###############################################################################
+  user-service:
+    build:
+      context: .                                   # project root; contains go.work
+      dockerfile: services/user-service/Dockerfile
+    environment:
+      DB_HOST:     db
+      DB_PORT:     5432
+      DB_USER:     admin
+      DB_PASSWORD: password
+      DB_NAME:     users
+      JWT_SECRET:  mytokensecret
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"   # hostPort:containerPort – avoid clashing when more services appear
+    networks: [stocktracker]
+    restart: on-failure
+
+
+###############################################################################
+#  Future micro-services – uncomment / duplicate as you implement them
+###############################################################################
+  # portfolio-service:
+  #   build:
+  #     context: .
+  #     dockerfile: services/portfolio-service/Dockerfile
+  #   environment:
+  #     DB_HOST: db
+  #     ...
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8082:8080"
+  #   networks: [stocktracker]
+  #   profiles: ["dev"]   # optional: start only with `docker compose --profile dev up`
+
+  # market-data-service:
+  #   ...
+
+  # api-gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: api-gateway/Dockerfile
+  #   depends_on:
+  #     - user-service
+  #     - portfolio-service
+  #   ports:
+  #     - "80:8080"
+  #   networks: [stocktracker]
+
